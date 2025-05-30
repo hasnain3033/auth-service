@@ -6,6 +6,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from './users/users.module';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { DevelopersModule } from '../developers/developers.module'; // <-- add this import
+import { DevelopersAuthModule } from './developers/developers.module';
 
 @Global()
 @Module({
@@ -32,6 +34,8 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UsersModule,
+    DevelopersModule,
+    DevelopersAuthModule,
   ],
   providers: [JwtStrategy, JwtRefreshStrategy],
   exports: [JwtModule, PassportModule, JwtStrategy, JwtRefreshStrategy],
