@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Developer } from './developer.entity';
 import { User } from './user.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class App {
@@ -26,7 +27,8 @@ export class App {
   @Column({ unique: true })
   clientId: string;
 
-  @Column()
+  @Column({ select: false })
+  @Exclude()
   clientSecret: string;
 
   @Column('text', { array: true })

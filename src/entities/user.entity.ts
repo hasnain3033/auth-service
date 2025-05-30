@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { App } from './app.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
@@ -21,7 +22,8 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
-  @Column()
+  @Column({ select: false })
+  @Exclude()
   passwordHash: string;
 
   @Column({ default: false })

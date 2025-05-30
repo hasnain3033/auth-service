@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { App } from './app.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class Developer {
@@ -15,7 +16,8 @@ export class Developer {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ select: false })
+  @Exclude()
   passwordHash: string;
 
   @CreateDateColumn()
@@ -23,4 +25,7 @@ export class Developer {
 
   @OneToMany(() => App, (app) => app.developer)
   apps: App[];
+
+  @Column({ type: 'text', nullable: true })
+  currentHashedRefreshToken: string | null;
 }

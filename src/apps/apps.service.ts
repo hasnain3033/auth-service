@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { App } from 'src/entities/app.entity';
-import { Developer } from 'src/entities/developer.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
+import { App } from '../entities/app.entity';
+import { Developer } from '../entities/developer.entity';
 import { Repository } from 'typeorm';
 import { CreateAppDto, UpdateAppDto } from './dto/app.dto';
 
@@ -24,10 +26,12 @@ export class AppsService {
         `Developer with id ${dto.developerId} not found`,
       );
     }
+    const clientId = uuidv4();
+    const clientSecret = randomBytes(32).toString('hex'); // 64-char secret
     const app = this.appRepo.create({
       name: dto.name,
-      clientId: dto.clientId,
-      clientSecret: dto.clientSecret,
+      clientId,
+      clientSecret,
       redirectUris: dto.redirectUris,
       developer,
     });

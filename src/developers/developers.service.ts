@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Developer } from 'src/entities/developer.entity';
 import { Repository } from 'typeorm';
@@ -13,13 +17,32 @@ export class DevelopersService {
   ) {}
 
   async create(dto: CreateDeveloperDto): Promise<Developer> {
+    const exists = await this.devRepo.findOne({ where: { email: dto.email } });
+    if (exists) {
+      throw new ConflictException('Developer with this email already exists');
+    }
     const hash = await bcrypt.hash(dto.password, 12);
-    const dev = this.devRepo.create({ email: dto.email, passwordHash: hash });
-    return this.devRepo.save(dev);
+    const dev = this.devRepo.create({
+      email: dto.email,
+      passwordHash: hash,
+    });
+    const saved = await this.devRepo.save(dev);
+    return saved;
   }
 
   findAll(): Promise<Developer[]> {
     return this.devRepo.find({ relations: ['apps'] });
+  }
+
+  async findByEmail(email: string): Promise<Developer | null> {
+    return this.devRepo.findOne({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true, // ← make sure the hash is loaded
+      },
+    });
   }
 
   async findOne(id: string): Promise<Developer> {
@@ -54,5 +77,26 @@ export class DevelopersService {
       throw new NotFoundException(`Developer with id ${id} not found`);
     }
     // void return indicates 204 No Content
+  }
+
+  async setCurrentHashedRefreshToken(
+    developerId: string,
+    token: string | null,
+  ): Promise<void> {
+    console.log(
+      `Setting refresh token for developer ${developerId}: ${token ? 'present' : 'null'}`,
+    );
+    if (!token) {
+      // logout: clear out the stored hash
+      await this.devRepo.update(developerId, {
+        currentHashedRefreshToken: null,
+      });
+    } else {
+      // login: hash & store
+      const hash = await bcrypt.hash(token, 10);
+      await this.devRepo.update(developerId, {
+        currentHashedRefreshToken: hash,
+      });
+    }
   }
 }
