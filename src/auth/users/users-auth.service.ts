@@ -4,18 +4,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { SignupDeveloperDto } from './dto/signup-developer.dto';
-import { DevelopersService } from 'src/developers/developers.service';
-import { LoginDeveloperDto } from './dto/login-developer.dto';
+import { SignupUserDto } from './dto/signup-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { UsersService } from '../../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from 'src/mail/mail.service';
 import { OtpService } from 'src/otp/otp.service';
 
 @Injectable()
-export class DevelopersAuthService {
+export class UsersAuthService {
   constructor(
-    private readonly developersService: DevelopersService, // inject CRUD service
+    private readonly usersService: UsersService,
     private jwtService: JwtService, // access-token JWT
     private refreshJwtService: JwtService, // refresh-token JWT (injected via module alias)
     private readonly config: ConfigService,
@@ -28,14 +28,14 @@ export class DevelopersAuthService {
    * Calls OtpService to generate and store a code, then emails it.
    */
   async requestOtp(email: string): Promise<void> {
-    const dev = await this.developersService.findByEmail(email);
-    if (!dev) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
       throw new NotFoundException('Developer not found');
     }
 
     const rawCode = await this.otpService.generateOtp(
-      dev.id,
-      'developer',
+      user.id,
+      'appUser',
       'email_otp',
       email,
     );
@@ -44,75 +44,71 @@ export class DevelopersAuthService {
     await this.mailService.sendOtpEmail(email, rawCode);
   }
 
-  /**
-   * Verify submitted OTP, issue JWTs if valid.
-   */
   async verifyOtp(
     email: string,
     plainOtp: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const dev = await this.developersService.findByEmail(email);
-    if (!dev) {
-      throw new UnauthorizedException('Invalid credentials');
+    // 1) Check that user exists
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
+    // 2) Verify OTP
     const isValid = await this.otpService.verifyOtp(
-      dev.id,
-      'developer',
+      user.id,
+      'appUser',
       'email_otp',
       plainOtp,
     );
-
     if (!isValid) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+      throw new UnauthorizedException('Invalid or expired code');
     }
 
-    await this.developersService.markVerified(dev.id);
+    // 3) Mark user as “verified” in DB
+    await this.usersService.markVerified(user.id);
 
     // Issue access + refresh tokens as before
     const payload = {
-      sub: dev.id,
-      email: dev.email,
-      role: 'developer' as const,
+      sub: user.id,
+      email: user.email,
+      role: 'appUser' as const,
     };
     const accessToken = this.jwtService.sign(payload);
 
-    const refreshToken = this.jwtService.sign(payload, {
+    const refreshToken = this.refreshJwtService.sign(payload, {
       secret: this.config.get<string>('JWT_REFRESH_SECRET'),
       expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRATION'),
     });
 
-    await this.developersService.setCurrentHashedRefreshToken(
-      dev.id,
-      refreshToken,
-    );
+    await this.usersService.setCurrentHashedRefreshToken(user.id, refreshToken);
 
     return { accessToken, refreshToken };
   }
 
-  async signup(dto: SignupDeveloperDto) {
+  async signup(signupDto: SignupUserDto) {
     // Delegate to your existing create logic (which handles hashing, conflicts, etc.)
-    const dev = await this.developersService.create(dto);
+    const user = await this.usersService.create(signupDto);
 
     // Return the created developer (or some subset)
-    return dev;
+    return user;
   }
 
   async login(
-    dto: LoginDeveloperDto,
+    dto: LoginUserDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const dev = await this.developersService.findByEmail(dto.email);
-    if (!dev) {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const valid = await bcrypt.compare(dto.password, dev.passwordHash);
+    const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }
     const payload = {
-      sub: dev.id,
-      email: dev.email,
-      role: 'developer' as const,
+      sub: user.id,
+      email: user.email,
+      role: 'appUser' as const,
     };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.refreshJwtService.sign(payload, {
@@ -121,17 +117,13 @@ export class DevelopersAuthService {
     });
 
     // store a hashed copy of the   token on the developer record
-    await this.developersService.setCurrentHashedRefreshToken(
-      dev.id,
-      refreshToken,
-    );
+    await this.usersService.setCurrentHashedRefreshToken(user.id, refreshToken);
 
     return { accessToken, refreshToken };
   }
 
-  async logout(devId: string) {
-    // clear the saved hash → revokes the token
-    await this.developersService.setCurrentHashedRefreshToken(devId, null);
+  async logout(userId: string) {
+    await this.usersService.setCurrentHashedRefreshToken(userId, null);
   }
 
   generateAccessToken(user: { id: string; email: string; role: string }) {

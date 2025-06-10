@@ -7,6 +7,8 @@ import { App } from 'src/entities/app.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { OtpService } from 'src/otp/otp.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +18,10 @@ export class UsersService {
 
     @InjectRepository(App)
     private readonly appRepo: Repository<App>,
+
+    // Inject OtpService and MailService so we can generate/email OTP
+    private readonly otpService: OtpService,
+    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -34,7 +40,21 @@ export class UsersService {
       passwordHash: hash,
       app,
     });
-    return this.userRepo.save(user);
+
+    const saved = await this.userRepo.save(user);
+
+    // 3) Generate & store an OTP for email verification
+    const code = await this.otpService.generateOtp(
+      saved.id,
+      'appUser',
+      'email_otp',
+      saved.email,
+    );
+
+    // 4) Send OTP email
+    await this.mailService.sendOtpEmail(user.email, code);
+
+    return saved;
   }
 
   /**
@@ -95,5 +115,39 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
     // returns void => 204 No Content
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepo.findOne({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true, // needed for login() comparisons
+        isEmailVerified: true, // so we can check before allowing login
+      },
+    });
+  }
+
+  async markVerified(userId: string): Promise<void> {
+    await this.userRepo.update(userId, { isEmailVerified: true });
+  }
+
+  async setCurrentHashedRefreshToken(
+    userId: string,
+    token: string | null,
+  ): Promise<void> {
+    if (!token) {
+      // logout: clear out the stored hash
+      await this.userRepo.update(userId, {
+        currentHashedRefreshToken: null,
+      });
+    } else {
+      // login: hash & store
+      const hash = await bcrypt.hash(token, 10);
+      await this.userRepo.update(userId, {
+        currentHashedRefreshToken: hash,
+      });
+    }
   }
 }

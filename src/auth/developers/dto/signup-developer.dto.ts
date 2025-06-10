@@ -7,7 +7,7 @@ export class SignupDeveloperDto {
     description: "Developer's unique email address",
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: 'Str0ngP@ssw0rd!',
@@ -15,5 +15,5 @@ export class SignupDeveloperDto {
   })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }

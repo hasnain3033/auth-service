@@ -7,10 +7,10 @@ export class LoginDeveloperDto {
     description: "Developer's email",
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ description: 'Developer password' })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }

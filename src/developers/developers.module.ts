@@ -4,9 +4,11 @@ import { DevelopersController } from './developers.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Developer } from '../entities/developer.entity';
 import { App } from '../entities/app.entity';
+import { MailModule } from 'src/mail/mail.module';
+import { OtpModule } from 'src/otp/otp.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Developer, App])], // Add entities here if needed
+  imports: [TypeOrmModule.forFeature([Developer, App]), MailModule, OtpModule], // Add entities here if needed
   providers: [DevelopersService],
   controllers: [DevelopersController],
   exports: [DevelopersService],

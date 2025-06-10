@@ -8,14 +8,25 @@ import { Developer } from 'src/entities/developer.entity';
 import { Repository } from 'typeorm';
 import { CreateDeveloperDto, UpdateDeveloperDto } from './dto/developer.dto';
 import * as bcrypt from 'bcrypt';
+import { OtpService } from 'src/otp/otp.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class DevelopersService {
   constructor(
     @InjectRepository(Developer)
     private devRepo: Repository<Developer>,
+
+    // Inject OtpService and MailService so we can generate/email OTP
+    private readonly otpService: OtpService,
+    private readonly mailService: MailService,
   ) {}
 
+  /**
+   * Create a new developer.
+   * ──> Hashes password, saves Developer with isEmailVerified = false,
+   * then generates & emails a one-time code.
+   */
   async create(dto: CreateDeveloperDto): Promise<Developer> {
     const exists = await this.devRepo.findOne({ where: { email: dto.email } });
     if (exists) {
@@ -27,6 +38,14 @@ export class DevelopersService {
       passwordHash: hash,
     });
     const saved = await this.devRepo.save(dev);
+    const rawOtp = await this.otpService.generateOtp(
+      saved.id,
+      'developer',
+      'email_otp',
+      saved.email,
+    );
+    await this.mailService.sendOtpEmail(saved.email, rawOtp);
+
     return saved;
   }
 
@@ -40,7 +59,8 @@ export class DevelopersService {
       select: {
         id: true,
         email: true,
-        passwordHash: true, // ← make sure the hash is loaded
+        passwordHash: true, // needed for login() comparisons
+        isEmailVerified: true, // so we can check before allowing login
       },
     });
   }
@@ -83,9 +103,6 @@ export class DevelopersService {
     developerId: string,
     token: string | null,
   ): Promise<void> {
-    console.log(
-      `Setting refresh token for developer ${developerId}: ${token ? 'present' : 'null'}`,
-    );
     if (!token) {
       // logout: clear out the stored hash
       await this.devRepo.update(developerId, {
@@ -98,5 +115,9 @@ export class DevelopersService {
         currentHashedRefreshToken: hash,
       });
     }
+  }
+
+  async markVerified(developerId: string): Promise<void> {
+    await this.devRepo.update(developerId, { isEmailVerified: true });
   }
 }

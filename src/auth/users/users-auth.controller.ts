@@ -1,19 +1,19 @@
 import { Response, Request } from 'express';
 import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { DevelopersAuthService } from './developers.service';
-import { Developer } from 'src/entities/developer.entity';
-import { SignupDeveloperDto } from './dto/signup-developer.dto';
-import { LoginDeveloperDto } from './dto/login-developer.dto';
-import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UsersAuthService } from './users-auth.service';
+import { User } from 'src/entities/user.entity';
 import { RequestOtpDto } from '../dto/request-otp.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { SignupUserDto } from './dto/signup-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
-@ApiTags('Developers Authentication')
-@Controller('developers')
-export class DevelopersAuthController {
-  constructor(private readonly authService: DevelopersAuthService) {}
+@ApiTags('Users Authentication')
+@Controller('users')
+export class UsersAuthController {
+  constructor(private readonly authService: UsersAuthService) {}
 
   @Post('request-otp')
   async requestOtp(@Body() dto: RequestOtpDto): Promise<{ message: string }> {
@@ -41,27 +41,27 @@ export class DevelopersAuthController {
   }
 
   @Post('signup')
-  @ApiOperation({ summary: 'Register a new developer' })
+  @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({
     status: 201,
-    description: 'Developer registered successfully.',
-    type: Developer,
+    description: 'User registered successfully.',
+    type: User,
   })
   async signup(
-    @Body() dto: SignupDeveloperDto,
-  ): Promise<Omit<Developer, 'passwordHash'>> {
+    @Body() dto: SignupUserDto,
+  ): Promise<Omit<User, 'passwordHash'>> {
     return this.authService.signup(dto);
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Developer login to receive JWT' })
+  @ApiOperation({ summary: 'User login to receive JWT' })
   @ApiResponse({
     status: 200,
     description: 'JWT access token',
     schema: { example: { access_token: 'token' } },
   })
   async login(
-    @Body() dto: LoginDeveloperDto,
+    @Body() dto: LoginUserDto,
     @Res({ passthrough: true })
     res: Response,
   ): Promise<{ access_token: string }> {

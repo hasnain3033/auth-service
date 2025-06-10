@@ -4,6 +4,7 @@ import {
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { App } from './app.entity';
 import { Exclude } from 'class-transformer';
@@ -11,24 +12,30 @@ import { Exclude } from 'class-transformer';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @ManyToOne(() => App, (a) => a.users)
-  app: App;
-
-  @Column({ nullable: true })
-  email: string;
+  @ManyToOne(() => App, (a) => a.users, { onDelete: 'CASCADE' })
+  app!: App;
 
   @Column({ nullable: true })
-  phone: string;
+  email!: string;
+
+  @Column({ nullable: true })
+  phone!: string;
 
   @Column({ select: false })
   @Exclude()
-  passwordHash: string;
+  passwordHash!: string;
+
+  @Column({ type: 'text', nullable: true })
+  currentHashedRefreshToken!: string | null;
 
   @Column({ default: false })
-  isVerified: boolean;
+  isEmailVerified!: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

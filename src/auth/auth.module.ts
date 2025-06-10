@@ -3,11 +3,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
-import { UsersModule } from './users/users.module';
+import { UsersAuthModule } from './users/users-auth.module';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { DevelopersModule } from '../developers/developers.module'; // <-- add this import
 import { DevelopersAuthModule } from './developers/developers.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Global()
 @Module({
@@ -34,6 +35,7 @@ import { DevelopersAuthModule } from './developers/developers.module';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UsersModule,
+    UsersAuthModule,
     DevelopersModule,
     DevelopersAuthModule,
   ],

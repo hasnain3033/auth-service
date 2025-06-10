@@ -8,7 +8,7 @@ export class CreateDeveloperDto {
     description: 'The developer’s unique email address',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: 'Str0ngP@ssw0rd!',
@@ -16,7 +16,7 @@ export class CreateDeveloperDto {
   })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }
 
 export class UpdateDeveloperDto extends PartialType(CreateDeveloperDto) {

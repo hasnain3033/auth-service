@@ -15,7 +15,7 @@ export class CreateAppDto {
     description: 'The UUID of the developer who owns this app',
   })
   @IsUUID()
-  developerId: string;
+  developerId!: string;
 
   @ApiProperty({
     example: 'My Awesome App',
@@ -23,7 +23,7 @@ export class CreateAppDto {
   })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: ['https://myapp.com/callback', 'https://myapp.io/redirect'],
@@ -33,7 +33,7 @@ export class CreateAppDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsUrl({}, { each: true })
-  redirectUris: string[];
+  redirectUris!: string[];
 }
 
 export class UpdateAppDto extends PartialType(CreateAppDto) {

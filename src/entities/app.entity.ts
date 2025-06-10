@@ -13,27 +13,27 @@ import { Exclude } from 'class-transformer';
 @Entity()
 export class App {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @ManyToOne(() => Developer, (d) => d.apps)
-  developer: Developer;
+  developer!: Developer;
 
   @OneToMany(() => User, (user) => user.app)
-  users: User[];
+  users!: User[];
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  clientId: string;
+  clientId!: string;
 
   @Column({ select: false })
   @Exclude()
-  clientSecret: string;
+  clientSecret!: string;
 
   @Column('text', { array: true })
-  redirectUris: string[];
+  redirectUris!: string[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }
