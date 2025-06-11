@@ -9,6 +9,8 @@ import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RequestOtpDto } from '../dto/request-otp.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
 @ApiTags('Developers Authentication')
 @Controller('developers')
@@ -94,5 +96,14 @@ export class DevelopersAuthController {
     await this.authService.logout(user.id);
     res.clearCookie('refresh_token', { path: '/' });
     return { message: 'Logged out' };
+  }
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 }

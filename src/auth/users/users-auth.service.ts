@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -11,6 +12,8 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from 'src/mail/mail.service';
 import { OtpService } from 'src/otp/otp.service';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
 @Injectable()
 export class UsersAuthService {
@@ -132,5 +135,47 @@ export class UsersAuthService {
       email: user.email,
       role: user.role,
     });
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const dev = await this.usersService.findByEmail(dto.email);
+    if (!dev) throw new NotFoundException('User not found');
+
+    // 1) generate & save OTP (you may already have a generateOtp(email) method)
+    const code = await this.otpService.generateOtp(
+      dev.id,
+      'appUser',
+      'email_otp',
+      dto.email,
+    );
+
+    // 2) send OTP via email
+    await this.mailService.sendOtpEmail(dto.email, code);
+
+    return { message: 'OTP sent to your email address' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const dev = await this.usersService.findByEmail(dto.email);
+    if (!dev) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isValid = await this.otpService.verifyOtp(
+      dev.id,
+      'appUser',
+      'email_otp',
+      dto.code,
+    );
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired code');
+    }
+
+    await this.usersService.update(dev.id, {
+      password: dto.newPassword,
+    });
+
+    return { message: 'Password has been reset successfully' };
   }
 }

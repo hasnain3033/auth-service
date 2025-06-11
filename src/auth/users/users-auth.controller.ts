@@ -9,6 +9,8 @@ import { SignupUserDto } from './dto/signup-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
 @ApiTags('Users Authentication')
 @Controller('users')
@@ -94,5 +96,15 @@ export class UsersAuthController {
     await this.authService.logout(user.id);
     res.clearCookie('refresh_token', { path: '/' });
     return { message: 'Logged out' };
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 }
