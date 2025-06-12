@@ -6,9 +6,14 @@ import { User } from '../entities/user.entity';
 import { App } from '../entities/app.entity';
 import { OtpModule } from 'src/otp/otp.module';
 import { MailModule } from 'src/mail/mail.module';
+import { Session } from 'src/entities/session.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, App]), MailModule, OtpModule],
+  imports: [
+    TypeOrmModule.forFeature([User, App, Session]),
+    MailModule,
+    OtpModule,
+  ],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

@@ -3,10 +3,12 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { App } from './app.entity';
+import { Session } from './session.entity';
 import { Exclude } from 'class-transformer';
 
 @Entity()
@@ -32,6 +34,9 @@ export class User {
 
   @Column({ default: false })
   isEmailVerified!: boolean;
+
+  @OneToMany(() => Session, (session) => session.user)
+  sessions!: Session[];
 
   @CreateDateColumn()
   createdAt!: Date;

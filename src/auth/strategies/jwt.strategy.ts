@@ -6,7 +6,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 export interface JwtPayload {
   sub: string; // your user/developer ID
   email: string; // optionally include email
-  role: 'developer' | 'user';
+  role: 'developer' | 'appUser';
   appId?: string; // only for end-users
 }
 

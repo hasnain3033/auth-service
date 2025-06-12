@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from './jwt.strategy';
 import { DevelopersService } from 'src/developers/developers.service';
 import * as bcrypt from 'bcrypt';
+import { UsersService } from 'src/users/users.service';
 
 interface RequestWithCookies extends ExpressRequest {
   // we know cookie-parser has populated this
@@ -30,6 +31,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   constructor(
     config: ConfigService,
     private readonly devService: DevelopersService,
+    private readonly userService: UsersService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
@@ -49,15 +51,21 @@ export class JwtRefreshStrategy extends PassportStrategy(
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const dev = await this.devService.findOne(payload.sub);
-    if (!dev.currentHashedRefreshToken) {
+    let record;
+    if (payload.role === 'developer') {
+      record = await this.devService.findOne(payload.sub);
+    } else {
+      record = await this.userService.findOne(payload.sub);
+    }
+
+    if (!record.currentHashedRefreshToken) {
       throw new UnauthorizedException('Refresh token revoked');
     }
 
     // bcrypt.compare expects (string|Buffer, string)
     const isValid = await bcrypt.compare(
       refreshToken,
-      dev.currentHashedRefreshToken,
+      record.currentHashedRefreshToken,
     );
     if (!isValid) {
       throw new UnauthorizedException('Refresh token revoked');
