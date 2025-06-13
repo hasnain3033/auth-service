@@ -9,9 +9,10 @@ import {
 import { Developer } from './developer.entity';
 import { User } from './user.entity';
 import { Exclude } from 'class-transformer';
+import { TenantScoped } from 'src/common/tenant.entity';
 
 @Entity()
-export class App {
+export class App extends TenantScoped {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

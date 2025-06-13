@@ -20,20 +20,20 @@ interface RequestWithUser extends Request {
 export class SessionsController {
   constructor(private readonly sessions: SessionsService) {}
 
-  /** GET /users/sessions */
+  /** GET /users/me/sessions */
   @Get()
   list(@Req() req: RequestWithUser) {
     Logger.log(`→ JWT sub: ${req.user.id}`);
     return this.sessions.listForUser(req.user.id);
   }
 
-  /** DELETE /users/sessions/:id */
+  /** DELETE /users/me/sessions/:id */
   @Delete(':id')
   revokeOne(@Req() req: RequestWithUser, @Param('id') id: string) {
     return this.sessions.revokeOne(req.user.id, id);
   }
 
-  /** DELETE /users/sessions */
+  /** DELETE /users/me/sessions */
   @Delete()
   revokeAll(@Req() req: RequestWithUser) {
     return this.sessions.revokeAll(req.user.id);

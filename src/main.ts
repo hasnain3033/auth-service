@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { TenantProvider } from './common/tenant.provider';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +17,10 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  app.use((req, _res, next) => {
+    const { tenantId } = req.user!; // populated by JwtStrategy
+    TenantProvider.run(tenantId, () => next());
+  });
   const config = new DocumentBuilder()
     .setTitle('NestJS App with TypeORM and Swagger')
     .setDescription('API documentation for the NestJS application')

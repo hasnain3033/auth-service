@@ -1,3 +1,4 @@
+import { TenantScoped } from 'src/common/tenant.entity';
 import {
   Entity,
   Column,
@@ -14,7 +15,7 @@ export type OtpPurpose =
 
 @Entity()
 @Index(['userId', 'userType', 'purpose', 'isUsed', 'expiresAt'])
-export class Otp {
+export class Otp extends TenantScoped {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

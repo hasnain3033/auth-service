@@ -10,9 +10,10 @@ import {
 import { App } from './app.entity';
 import { Session } from './session.entity';
 import { Exclude } from 'class-transformer';
+import { TenantScoped } from 'src/common/tenant.entity';
 
 @Entity()
-export class User {
+export class User extends TenantScoped {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

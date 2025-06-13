@@ -7,9 +7,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { TenantScoped } from 'src/common/tenant.entity';
 
 @Entity('sessions')
-export class Session {
+export class Session extends TenantScoped {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
