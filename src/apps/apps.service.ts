@@ -4,17 +4,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'crypto';
 import { App } from '../entities/app.entity';
 import { Developer } from '../entities/developer.entity';
-import { Repository } from 'typeorm';
 import { CreateAppDto, UpdateAppDto } from './dto/app.dto';
+import { TenantAwareRepository } from 'src/common/tenant-aware.repository';
 
 @Injectable()
 export class AppsService {
   constructor(
-    @InjectRepository(App)
-    private readonly appRepo: Repository<App>,
+    private readonly appRepo: TenantAwareRepository<App>,
 
     @InjectRepository(Developer)
-    private readonly devRepo: Repository<Developer>,
+    private readonly devRepo: TenantAwareRepository<Developer>,
   ) {}
 
   async create(dto: CreateAppDto): Promise<App> {

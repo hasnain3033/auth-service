@@ -3,18 +3,14 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Session } from 'src/entities/session.entity';
 import { User } from 'src/entities/user.entity';
+import { TenantAwareRepository } from 'src/common/tenant-aware.repository';
 
 @Injectable()
 export class SessionsService {
-  constructor(
-    @InjectRepository(Session)
-    private readonly sessionsRepo: Repository<Session>,
-  ) {}
+  constructor(private readonly sessionsRepo: TenantAwareRepository<Session>) {}
 
   /** Create a new session (called on login / OTP‐verify) */
   async createSession(

@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThan } from 'typeorm';
+import { LessThanOrEqual, MoreThan } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { Otp, OtpPurpose, UserType } from 'src/entities/otp.entity';
+import { TenantAwareRepository } from 'src/common/tenant-aware.repository';
 
 @Injectable()
 export class OtpService {
   constructor(
-    @InjectRepository(Otp)
-    private readonly otpRepo: Repository<Otp>,
+    private readonly otpRepo: TenantAwareRepository<Otp>,
     private readonly config: ConfigService,
   ) {}
 

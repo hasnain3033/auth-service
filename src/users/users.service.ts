@@ -1,23 +1,18 @@
-// src/users/users.service.ts
-
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { App } from 'src/entities/app.entity';
-import { Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 import { OtpService } from 'src/otp/otp.service';
 import { MailService } from 'src/mail/mail.service';
+import { TenantAwareRepository } from 'src/common/tenant-aware.repository';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private readonly userRepo: TenantAwareRepository<User>,
 
-    @InjectRepository(App)
-    private readonly appRepo: Repository<App>,
+    private readonly appRepo: TenantAwareRepository<App>,
 
     // Inject OtpService and MailService so we can generate/email OTP
     private readonly otpService: OtpService,

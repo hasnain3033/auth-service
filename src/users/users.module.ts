@@ -7,6 +7,7 @@ import { App } from '../entities/app.entity';
 import { OtpModule } from 'src/otp/otp.module';
 import { MailModule } from 'src/mail/mail.module';
 import { Session } from 'src/entities/session.entity';
+import { userRepositoryProvider } from './user.repository';
 
 @Module({
   imports: [
@@ -14,8 +15,8 @@ import { Session } from 'src/entities/session.entity';
     MailModule,
     OtpModule,
   ],
-  providers: [UsersService],
+  providers: [UsersService, userRepositoryProvider],
   controllers: [UsersController],
-  exports: [UsersService],
+  exports: [UsersService, userRepositoryProvider],
 })
 export class UsersModule {}
