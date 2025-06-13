@@ -1,5 +1,13 @@
 import { Response, Request } from 'express';
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersAuthService } from './users-auth.service';
 import { User } from 'src/entities/user.entity';
 import { RequestOtpDto } from '../dto/request-otp.dto';
@@ -26,11 +34,13 @@ export class UsersAuthController {
   @Post('verify-otp')
   async verifyOtp(
     @Body() dto: VerifyOtpDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ access_token: string }> {
     const { accessToken, refreshToken } = await this.authService.verifyOtp(
       dto.email,
       dto.otp,
+      req,
     );
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
@@ -64,10 +74,14 @@ export class UsersAuthController {
   })
   async login(
     @Body() dto: LoginUserDto,
+    @Req() req: Request,
     @Res({ passthrough: true })
     res: Response,
   ): Promise<{ access_token: string }> {
-    const { accessToken, refreshToken } = await this.authService.login(dto);
+    const { accessToken, refreshToken } = await this.authService.login(
+      dto,
+      req,
+    );
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -90,10 +104,14 @@ export class UsersAuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  @Post('logout/:sessionId')
+  async logout(
+    @Req() req: Request,
+    @Param('sessionId') sessionId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const user = req.user as { id: string };
-    await this.authService.logout(user.id);
+    await this.authService.logout(user.id, sessionId);
     res.clearCookie('refresh_token', { path: '/' });
     return { message: 'Logged out' };
   }

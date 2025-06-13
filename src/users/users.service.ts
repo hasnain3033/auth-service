@@ -132,22 +132,4 @@ export class UsersService {
   async markVerified(userId: string): Promise<void> {
     await this.userRepo.update(userId, { isEmailVerified: true });
   }
-
-  async setCurrentHashedRefreshToken(
-    userId: string,
-    token: string | null,
-  ): Promise<void> {
-    if (!token) {
-      // logout: clear out the stored hash
-      await this.userRepo.update(userId, {
-        currentHashedRefreshToken: null,
-      });
-    } else {
-      // login: hash & store
-      const hash = await bcrypt.hash(token, 10);
-      await this.userRepo.update(userId, {
-        currentHashedRefreshToken: hash,
-      });
-    }
-  }
 }

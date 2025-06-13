@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import {
   BadRequestException,
   Injectable,
@@ -14,6 +15,8 @@ import { MailService } from 'src/mail/mail.service';
 import { OtpService } from 'src/otp/otp.service';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { SessionsService } from './sessions/sessions.service';
+import { JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class UsersAuthService {
@@ -21,6 +24,7 @@ export class UsersAuthService {
     private readonly usersService: UsersService,
     private jwtService: JwtService, // access-token JWT
     private refreshJwtService: JwtService, // refresh-token JWT (injected via module alias)
+    private readonly sessionsService: SessionsService,
     private readonly config: ConfigService,
     private readonly mailService: MailService,
     private readonly otpService: OtpService,
@@ -50,6 +54,7 @@ export class UsersAuthService {
   async verifyOtp(
     email: string,
     plainOtp: string,
+    req: Request,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     // 1) Check that user exists
     const user = await this.usersService.findByEmail(email);
@@ -84,7 +89,22 @@ export class UsersAuthService {
       expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRATION'),
     });
 
-    await this.usersService.setCurrentHashedRefreshToken(user.id, refreshToken);
+    const { exp } = this.refreshJwtService.decode<JwtPayload & { exp: number }>(
+      refreshToken,
+    );
+    const expiresAt = new Date(exp * 1000);
+
+    const userAgent = req.get('user-agent') || 'unknown';
+    const ipAddr = req.ip || '0.0.0.0';
+
+    // create a new session row
+    await this.sessionsService.createSession(
+      user.id,
+      refreshToken,
+      userAgent,
+      ipAddr,
+      expiresAt,
+    );
 
     return { accessToken, refreshToken };
   }
@@ -99,6 +119,7 @@ export class UsersAuthService {
 
   async login(
     dto: LoginUserDto,
+    req: Request, // make sure your controller passes this in
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
@@ -119,14 +140,27 @@ export class UsersAuthService {
       expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRATION'),
     });
 
-    // store a hashed copy of the   token on the developer record
-    await this.usersService.setCurrentHashedRefreshToken(user.id, refreshToken);
+    const { exp } = this.refreshJwtService.decode<JwtPayload & { exp: number }>(
+      refreshToken,
+    );
+    const expiresAt = new Date(exp * 1000);
+
+    const userAgent = req.get('user-agent') || 'unknown';
+    const ipAddr = req.ip || '0.0.0.0';
+
+    await this.sessionsService.createSession(
+      user.id,
+      refreshToken,
+      userAgent,
+      ipAddr,
+      expiresAt,
+    );
 
     return { accessToken, refreshToken };
   }
 
-  async logout(userId: string) {
-    await this.usersService.setCurrentHashedRefreshToken(userId, null);
+  async logout(userId: string, sessionId: string) {
+    return this.sessionsService.revokeOne(userId, sessionId);
   }
 
   generateAccessToken(user: { id: string; email: string; role: string }) {
